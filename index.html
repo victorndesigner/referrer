@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Resgate - bolttexturas</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+
+        :root {
+            --bg: #0a0a0a;
+            --card: #141414;
+            --accent: #c773ff;
+            --text: #ffffff;
+            --text-muted: #888888;
+            --success: #00ff88;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            text-align: center;
+            overflow: hidden;
+        }
+
+        .container {
+            background: var(--card);
+            padding: 40px;
+            border-radius: 20px;
+            border: 1px solid #333;
+            width: 90%;
+            max-width: 450px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            position: relative;
+        }
+
+        .logo {
+            font-size: 50px;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        p {
+            color: var(--text-muted);
+            font-size: 14px;
+            margin-bottom: 30px;
+        }
+
+        .box {
+            background: #000;
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px dashed var(--accent);
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .main-btn {
+            background: var(--accent);
+            color: #000;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            width: 100%;
+            transition: 0.3s;
+            display: none;
+        }
+
+        .main-btn:hover {
+            transform: scale(1.02);
+        }
+
+        .loader {
+            border: 3px solid #333;
+            border-top: 3px solid var(--accent);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        #status {
+            font-size: 14px;
+            color: var(--accent);
+            margin-top: 10px;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .success-icon {
+            font-size: 50px;
+            color: var(--success);
+            margin-bottom: 20px;
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="logo" id="main-logo">💜</div>
+        <div class="success-icon" id="success-icon"><i class="fas fa-check-circle"></i></div>
+
+        <h1 id="title">Aguarde um momento...</h1>
+        <p id="desc">Estamos processando sua solicitação.</p>
+
+        <div id="loading-area">
+            <div class="loader"></div>
+            <div id="status">Validando dados...</div>
+        </div>
+
+        <div class="box" id="result-box">
+            <span id="result-text"
+                style="font-family: monospace; font-size: 18px; color: var(--accent); font-weight: 700;"></span>
+        </div>
+
+        <button class="main-btn" id="action-btn">Copiar e Abrir App</button>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:3000/api'; // <--- MUDE PARA SUA URL DA DISCLOUD
+
+        const params = new URLSearchParams(window.location.search);
+        const type = params.get('type'); // 'key' ou 'texture'
+        const hwid = params.get('hwid');
+        const textureId = params.get('id');
+
+        const title = document.getElementById('title');
+        const desc = document.getElementById('desc');
+        const status = document.getElementById('status');
+        const loadingArea = document.getElementById('loading-area');
+        const resultBox = document.getElementById('result-box');
+        const resultText = document.getElementById('result-text');
+        const actionBtn = document.getElementById('action-btn');
+        const successIcon = document.getElementById('success-icon');
+        const mainLogo = document.getElementById('main-logo');
+
+        async function init() {
+            // Pequeno delay para efeito visual
+            await new Promise(r => setTimeout(r, 1500));
+
+            if (type === 'key') {
+                handleKeyGeneration();
+            } else if (type === 'texture') {
+                handleTextureRelease();
+            } else {
+                showError('Requisição inválida (#1)');
+            }
+        }
+
+        async function handleKeyGeneration() {
+            try {
+                status.innerText = 'Gerando nova chave...';
+                const res = await fetch(`${API_URL}/generate-key`);
+                const data = await res.json();
+
+                if (data.success) {
+                    title.innerText = 'Key Liberada!';
+                    desc.innerText = `Sua chave tem duração de ${data.duration}.`;
+                    loadingArea.style.display = 'none';
+                    resultBox.style.display = 'block';
+                    resultText.innerText = data.key;
+                    actionBtn.style.display = 'block';
+                    actionBtn.innerText = 'Copiar Key';
+
+                    actionBtn.onclick = () => {
+                        navigator.clipboard.writeText(data.key);
+                        actionBtn.innerText = '✅ Copiado!';
+                    };
+                }
+            } catch (e) { showError('Erro ao gerar sua key.'); }
+        }
+
+        async function handleTextureRelease() {
+            if (!hwid || !textureId) return showError('Dados incompletos (#3)');
+
+            try {
+                status.innerText = 'Liberando download no App...';
+                const res = await fetch(`${API_URL}/download/confirm?hwid=${hwid}&textureId=${textureId}`);
+                const data = await res.json();
+
+                if (data.success) {
+                    mainLogo.style.display = 'none';
+                    successIcon.style.display = 'block';
+                    loadingArea.style.display = 'none';
+                    title.innerText = 'Acesso Liberado!';
+                    desc.innerText = 'Você pode voltar para o Aplicativo agora. O download começará automaticamente.';
+                    status.style.display = 'none';
+                }
+            } catch (e) { showError('Erro ao liberar textura.'); }
+        }
+
+        function showError(msg) {
+            loadingArea.innerHTML = `<div style="color: #ff4d4d; font-weight: 700;">❌ ${msg}</div>`;
+            title.innerText = 'Ops!';
+            desc.innerText = 'Ocorreu um problema ao processar seu pedido.';
+        }
+
+        init();
+    </script>
+</body>
+
+</html>
