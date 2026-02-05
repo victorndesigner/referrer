@@ -164,15 +164,29 @@
         const mainLogo = document.getElementById('main-logo');
 
         async function init() {
+            console.log('--- Bolt Texturas Debug ---');
+            console.log('Tipo:', type);
+            console.log('HWID:', hwid);
+            console.log('ID Textura:', textureId);
+            console.log('Referrer:', document.referrer);
+
             // Pequeno delay para efeito visual
             await new Promise(r => setTimeout(r, 1500));
 
-            if (type === 'key') {
+            // Se não tiver tipo, mas for o site de keys, tenta assumir 'key' por segurança
+            const finalType = type || (window.location.href.includes('referrer') ? 'key' : null);
+
+            if (finalType === 'key') {
                 handleKeyGeneration();
-            } else if (type === 'texture') {
+            } else if (finalType === 'texture') {
                 handleTextureRelease();
             } else {
-                showError('Requisição inválida (#1)');
+                showError('Requisição inválida (#1) - Falta o parâmetro ?type=key ou ?type=texture');
+            }
+
+            // Alerta de Localhost
+            if (API_URL.includes('localhost') && window.location.protocol === 'https:') {
+                console.warn('⚠️ ATENÇÃO: Você está em um site HTTPS tentando chamar o LOCALHOST (HTTP). O navegador pode bloquear a requisição por segurança (Mixed Content).');
             }
         }
 
