@@ -173,15 +173,20 @@
             const validDomains = ['sannerurl', 'caminhodesperto', 'bolttexturas', 'encurtador'];
             const referrerValid = validDomains.some(d => referrer.indexOf(d) !== -1);
             const tokenValid = token === 'bolt_2026_acesso';
+            const isAuthorized = referrerValid || tokenValid;
 
-            if (!referrerValid && !tokenValid) {
-                showError(`Requisição inválida (#2)\nInicie o processo pelo Aplicativo ou Encurtador oficial.\n(Ref: ${referrer || 'Nenhum'})`);
+            if (!isAuthorized) {
+                showError(`Requisição inválida (#2)\nOrigem detectada: ${referrer || 'Acesso Direto'}`);
                 return;
             }
 
-            if (type === 'key') {
+            // --- PROTEÇÃO ANTI-F5: Limpar URL após validar ---
+            window.history.replaceState({}, document.title, window.location.pathname);
+
+            const finalType = type || 'key';
+            if (finalType === 'key') {
                 handleKeyGeneration();
-            } else if (type === 'texture') {
+            } else if (finalType === 'texture') {
                 handleTextureRelease(hwid, textureId);
             } else {
                 showError('Tipo de solicitação desconhecido.');
