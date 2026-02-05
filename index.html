@@ -164,16 +164,21 @@
         const mainLogo = document.getElementById('main-logo');
 
         async function init() {
+            const referrer = document.referrer.toLowerCase();
+            const token = params.get('token'); // Nova camada de segurança
+
             console.log('--- Bolt Texturas Debug ---');
-            console.log('Tipo:', type);
-            console.log('Referrer:', document.referrer);
+            console.log('Referrer detectado:', referrer || 'Nenhum (Acesso Direto)');
+            console.log('Token detectado:', token || 'Nenhum');
 
             await new Promise(r => setTimeout(r, 1500));
 
-            // Segurança: Se não vier do seu encurtador sannerurl, bloqueia
-            const referrer = document.referrer.toLowerCase();
-            if (!referrer || !referrer.includes('sannerurl')) {
-                showError('Requisição inválida (#2) - Use o link oficial.');
+            // SEGURANÇA: Só libera se vier do encurtador OU se tiver um token válido gerado pelo App
+            // O token 'bolt_2026_acesso' é o nosso segredo entre App e Site.
+            const isAuthorized = referrer.includes('sannerurl') || referrer.includes('encurtador') || token === 'bolt_2026_acesso';
+
+            if (!isAuthorized) {
+                showError(`Requisição inválida (#2)\nOrigem detectada: ${referrer || 'Acesso Direto'}`);
                 return;
             }
 
