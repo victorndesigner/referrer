@@ -44,7 +44,6 @@
             width: 90%;
             max-width: 450px;
             box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
-            position: relative;
         }
 
         .logo {
@@ -128,31 +127,25 @@
     <div class="container">
         <div class="logo" id="main-logo">💜</div>
         <div class="success-icon" id="success-icon"><i class="fas fa-check-circle"></i></div>
-
-        <h1 id="title">Aguarde um momento...</h1>
-        <p id="desc">Estamos processando sua solicitação.</p>
-
+        <h1 id="title">Aguarde...</h1>
+        <p id="desc">Validando seu acesso ao sistema.</p>
         <div id="loading-area">
             <div class="loader"></div>
-            <div id="status">Validando dados...</div>
+            <div id="status">Verificando encurtador...</div>
         </div>
-
         <div class="box" id="result-box">
             <span id="result-text"
                 style="font-family: monospace; font-size: 18px; color: var(--accent); font-weight: 700;"></span>
         </div>
-
         <button class="main-btn" id="action-btn">Ação</button>
     </div>
 
     <script>
+        // --- CONFIGURAÇÃO ---
         const API_URL = 'http://localhost:3000/api'; // <--- MUDE PARA SUA URL DA DISCLOUD NO FINAL
-
         const params = new URLSearchParams(window.location.search);
-        const type = params.get('type');
-        const hwid = params.get('hwid');
-        const textureId = params.get('id');
 
+        // Elementos UI
         const title = document.getElementById('title');
         const desc = document.getElementById('desc');
         const status = document.getElementById('status');
@@ -165,31 +158,33 @@
 
         async function init() {
             const referrer = document.referrer.toLowerCase();
-            const token = params.get('token'); // Nova camada de segurança
+            const token = params.get('token');
+            const type = params.get('type') || 'key';
+            const hwid = params.get('hwid');
+            const textureId = params.get('id');
 
             console.log('--- Bolt Texturas Debug ---');
-            console.log('Referrer detectado:', referrer || 'Nenhum (Acesso Direto)');
-            console.log('Token detectado:', token || 'Nenhum');
+            console.log('Referrer:', referrer || 'Direto');
+            console.log('Token:', token || 'Nulo');
 
             await new Promise(r => setTimeout(r, 1500));
 
-            // SEGURANÇA: Só libera se vier do encurtador OU se tiver um token válido gerado pelo App
-            // O token 'bolt_2026_acesso' é o nosso segredo entre App e Site.
-            const isAuthorized = referrer.includes('sannerurl') || referrer.includes('encurtador') || token === 'bolt_2026_acesso';
+            // SEGURANÇA: Domínios do encurtador sannerurl.com
+            const validDomains = ['sannerurl', 'caminhodesperto', 'bolttexturas', 'encurtador'];
+            const referrerValid = validDomains.some(d => referrer.indexOf(d) !== -1);
+            const tokenValid = token === 'bolt_2026_acesso';
 
-            if (!isAuthorized) {
-                showError(`Requisição inválida (#2)\nOrigem detectada: ${referrer || 'Acesso Direto'}`);
+            if (!referrerValid && !tokenValid) {
+                showError(`Requisição inválida (#2)\nInicie o processo pelo Aplicativo ou Encurtador oficial.\n(Ref: ${referrer || 'Nenhum'})`);
                 return;
             }
 
-            const finalType = type || (window.location.href.includes('referrer') ? 'key' : null);
-
-            if (finalType === 'key') {
+            if (type === 'key') {
                 handleKeyGeneration();
-            } else if (finalType === 'texture') {
-                handleTextureRelease();
+            } else if (type === 'texture') {
+                handleTextureRelease(hwid, textureId);
             } else {
-                showError('Requisição inválida (#1) - Falta parâmetro.');
+                showError('Tipo de solicitação desconhecido.');
             }
         }
 
@@ -198,7 +193,6 @@
                 status.innerText = 'Gerando nova chave...';
                 const res = await fetch(`${API_URL}/generate-key`);
                 const data = await res.json();
-
                 if (data.success) {
                     title.innerText = 'Key Liberada!';
                     desc.innerText = `Sua chave tem duração de ${data.duration}.`;
@@ -207,22 +201,20 @@
                     resultText.innerText = data.key;
                     actionBtn.style.display = 'block';
                     actionBtn.innerText = 'Copiar Key';
-
                     actionBtn.onclick = () => {
                         navigator.clipboard.writeText(data.key);
                         actionBtn.innerText = '✅ Copiado!';
                     };
-                }
-            } catch (e) { showError('Erro ao conectar com o bot.'); }
+                } else { showError('Servidor recusou a geração.'); }
+            } catch (e) { showError('Erro de conexão com o painel (API_URL incorreta?).'); }
         }
 
-        async function handleTextureRelease() {
-            if (!hwid || !textureId) return showError('Dados imcompletos (#3)');
+        async function handleTextureRelease(hwid, textureId) {
+            if (!hwid || !textureId) return showError('Faltam parâmetros para o download.');
             try {
                 status.innerText = 'Liberando download no App...';
                 const res = await fetch(`${API_URL}/download/confirm?hwid=${hwid}&textureId=${textureId}`);
                 const data = await res.json();
-
                 if (data.success) {
                     mainLogo.style.display = 'none';
                     successIcon.style.display = 'block';
@@ -231,15 +223,15 @@
                     desc.innerText = 'Volte para o Aplicativo. O download começará agora.';
                     status.style.display = 'none';
                 }
-            } catch (e) { showError('Erro ao liberar textura.'); }
+            } catch (e) { showError('Erro ao confirmar download no servidor.'); }
         }
 
         function showError(msg) {
-            loadingArea.innerHTML = `<div style="color: #ff4d4d; font-weight: 700;">❌ ${msg}</div>`;
+            console.error('Erro:', msg);
+            loadingArea.innerHTML = `<div style="color: #ff4d4d; font-weight: 700; font-size: 13px; white-space: pre-wrap;">❌ ${msg}</div>`;
             title.innerText = 'Ops!';
             desc.innerText = 'Solicitação negada.';
         }
-
         init();
     </script>
 </body>
