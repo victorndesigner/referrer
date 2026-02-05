@@ -142,14 +142,14 @@
                 style="font-family: monospace; font-size: 18px; color: var(--accent); font-weight: 700;"></span>
         </div>
 
-        <button class="main-btn" id="action-btn">Copiar e Abrir App</button>
+        <button class="main-btn" id="action-btn">Ação</button>
     </div>
 
     <script>
-        const API_URL = 'http://localhost:3000/api'; // <--- MUDE PARA SUA URL DA DISCLOUD
+        const API_URL = 'http://localhost:3000/api'; // <--- MUDE PARA SUA URL DA DISCLOUD NO FINAL
 
         const params = new URLSearchParams(window.location.search);
-        const type = params.get('type'); // 'key' ou 'texture'
+        const type = params.get('type');
         const hwid = params.get('hwid');
         const textureId = params.get('id');
 
@@ -166,14 +166,17 @@
         async function init() {
             console.log('--- Bolt Texturas Debug ---');
             console.log('Tipo:', type);
-            console.log('HWID:', hwid);
-            console.log('ID Textura:', textureId);
             console.log('Referrer:', document.referrer);
 
-            // Pequeno delay para efeito visual
             await new Promise(r => setTimeout(r, 1500));
 
-            // Se não tiver tipo, mas for o site de keys, tenta assumir 'key' por segurança
+            // Segurança: Se não vier do seu encurtador sannerurl, bloqueia
+            const referrer = document.referrer.toLowerCase();
+            if (!referrer || !referrer.includes('sannerurl')) {
+                showError('Requisição inválida (#2) - Use o link oficial.');
+                return;
+            }
+
             const finalType = type || (window.location.href.includes('referrer') ? 'key' : null);
 
             if (finalType === 'key') {
@@ -181,12 +184,7 @@
             } else if (finalType === 'texture') {
                 handleTextureRelease();
             } else {
-                showError('Requisição inválida (#1) - Falta o parâmetro ?type=key ou ?type=texture');
-            }
-
-            // Alerta de Localhost
-            if (API_URL.includes('localhost') && window.location.protocol === 'https:') {
-                console.warn('⚠️ ATENÇÃO: Você está em um site HTTPS tentando chamar o LOCALHOST (HTTP). O navegador pode bloquear a requisição por segurança (Mixed Content).');
+                showError('Requisição inválida (#1) - Falta parâmetro.');
             }
         }
 
@@ -210,12 +208,11 @@
                         actionBtn.innerText = '✅ Copiado!';
                     };
                 }
-            } catch (e) { showError('Erro ao gerar sua key.'); }
+            } catch (e) { showError('Erro ao conectar com o bot.'); }
         }
 
         async function handleTextureRelease() {
-            if (!hwid || !textureId) return showError('Dados incompletos (#3)');
-
+            if (!hwid || !textureId) return showError('Dados imcompletos (#3)');
             try {
                 status.innerText = 'Liberando download no App...';
                 const res = await fetch(`${API_URL}/download/confirm?hwid=${hwid}&textureId=${textureId}`);
@@ -226,7 +223,7 @@
                     successIcon.style.display = 'block';
                     loadingArea.style.display = 'none';
                     title.innerText = 'Acesso Liberado!';
-                    desc.innerText = 'Você pode voltar para o Aplicativo agora. O download começará automaticamente.';
+                    desc.innerText = 'Volte para o Aplicativo. O download começará agora.';
                     status.style.display = 'none';
                 }
             } catch (e) { showError('Erro ao liberar textura.'); }
@@ -235,7 +232,7 @@
         function showError(msg) {
             loadingArea.innerHTML = `<div style="color: #ff4d4d; font-weight: 700;">❌ ${msg}</div>`;
             title.innerText = 'Ops!';
-            desc.innerText = 'Ocorreu um problema ao processar seu pedido.';
+            desc.innerText = 'Solicitação negada.';
         }
 
         init();
