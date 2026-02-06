@@ -163,6 +163,17 @@
             const hwid = params.get('hwid');
             const textureId = params.get('id');
 
+            // Ajustar textos iniciais baseado no tipo
+            if (type === 'texture') {
+                title.innerText = 'Liberando Textura...';
+                desc.innerText = 'Aguarde a validação do encurtador para iniciar o download no App.';
+                status.innerText = 'Confirmando acesso aos arquivos...';
+            } else {
+                title.innerText = 'Gerando sua Key...';
+                desc.innerText = 'Validando encurtador para liberar sua chave de acesso.';
+                status.innerText = 'Verificando segurança...';
+            }
+
             console.log('--- Bolt Texturas Debug ---');
             console.log('Referrer:', referrer || 'Direto');
             console.log('Token:', token || 'Nulo');
@@ -176,13 +187,18 @@
             const isAuthorized = referrerValid || tokenValid;
 
             // --- PROTEÇÃO ANTI-F5: Usar LocalStorage para evitar re-uso do mesmo link/referrer ---
-            const requestKey = `bolt_${referrer}_${type}_${token}`;
+            const requestKey = `bolt_${referrer}_${type}_${token}_${textureId || ''}_${hwid || ''}`;
             if (localStorage.getItem('bolt_last_request') === requestKey) {
-                showError('Você já resgatou este item. Volte ao início e utilize um novo link.');
-                return;
+                // Se for textura, talvez o usuário só deu F5 e o download já está pronto no App.
+                // Mas vamos manter o aviso ou apenas prosseguir se for textura? 
+                // Melhor permitir se for textura para evitar travamentos no App.
+                if (type === 'key') {
+                    showError('Você já resgatou este item recentemente. Volte ao início para gerar uma nova.');
+                    return;
+                }
             }
 
-            // Marcar como usado por 30 segundos (tempo de sobra para gerar a primeira vez)
+            // Marcar como usado por 60 segundos
             localStorage.setItem('bolt_last_request', requestKey);
 
             // Limpar URL após validar para visual
@@ -204,8 +220,8 @@
                 const res = await fetch(`${API_URL}/generate-key`);
                 const data = await res.json();
                 if (data.success) {
-                    title.innerText = 'Key Liberada!';
-                    desc.innerText = `Sua chave tem duração de ${data.duration}.`;
+                    title.innerText = 'Sua Key Chegou!';
+                    desc.innerText = `Chave de ${data.duration} liberada. Copie e cole no Aplicativo.`;
                     loadingArea.style.display = 'none';
                     resultBox.style.display = 'block';
                     resultText.innerText = data.key;
@@ -222,16 +238,21 @@
         async function handleTextureRelease(hwid, textureId) {
             if (!hwid || !textureId) return showError('Faltam parâmetros para o download.');
             try {
-                status.innerText = 'Liberando download no App...';
+                status.innerText = 'Confirmando download no servidor...';
                 const res = await fetch(`${API_URL}/download/confirm?hwid=${hwid}&textureId=${textureId}`);
                 const data = await res.json();
                 if (data.success) {
                     mainLogo.style.display = 'none';
                     successIcon.style.display = 'block';
                     loadingArea.style.display = 'none';
-                    title.innerText = 'Acesso Liberado!';
-                    desc.innerText = 'Volte para o Aplicativo. O download começará agora.';
+                    title.innerText = 'Download Pronto!';
+                    desc.innerText = 'O seu download já foi liberado. Volte para o Aplicativo para acompanhar.';
                     status.style.display = 'none';
+
+                    // Botão de fechar para melhorar UX
+                    actionBtn.style.display = 'block';
+                    actionBtn.innerText = 'Fechar Página';
+                    actionBtn.onclick = () => window.close();
                 }
             } catch (e) { showError('Erro ao confirmar download no servidor.'); }
         }
