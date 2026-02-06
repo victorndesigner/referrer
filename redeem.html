@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resgatar Key • Bolt Texturas</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+
+        :root {
+            --bg: #0a0a0a;
+            --card: #141414;
+            --accent: #c773ff;
+            --text: #ffffff;
+            --success: #00ff88;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            display: flex;
+            min-height: 100vh;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            background: var(--card);
+            padding: 2rem;
+            border-radius: 12px;
+            border: 1px solid #333;
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 0 50px rgba(199, 115, 255, 0.1);
+        }
+
+        h1 {
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+        }
+
+        p {
+            color: #888;
+            font-size: 0.9rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .key-box {
+            background: #000;
+            border: 1px solid #333;
+            padding: 15px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 1rem;
+            font-family: monospace;
+            font-size: 1.2rem;
+            color: var(--accent);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .loader {
+            width: 24px;
+            height: 24px;
+            border: 3px solid transparent;
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: auto;
+        }
+
+        @keyframes spin {
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .copy-btn {
+            background: var(--accent);
+            border: none;
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            width: 100%;
+            transition: 0.2s;
+        }
+
+        .copy-btn:hover {
+            opacity: 0.9;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container" id="loading-state">
+        <div class="loader"></div>
+        <p style="margin-top:15px">Validando acesso...</p>
+    </div>
+
+    <div class="container hidden" id="success-state">
+        <h1 style="color:var(--success)"><i class="fas fa-check-circle"></i> Acesso Liberado</h1>
+        <p>Key gerada para <b id="user-tag" style="color:white">...</b></p>
+        <div class="key-box" id="key-display">...</div>
+        <button class="copy-btn" onclick="copyKey()">Copiar Key</button>
+        <p style="margin-top:15px; font-size:0.8rem">Cole esta key no Aplicativo Bolt.</p>
+    </div>
+
+    <div class="container hidden" id="error-state">
+        <h1 style="color:#ff4444"><i class="fas fa-times-circle"></i> Erro</h1>
+        <p id="error-msg">Token inválido ou expirado.</p>
+        <button class="copy-btn" style="background:#333" onclick="window.close()">Fechar</button>
+    </div>
+
+    <script>
+        // ATENÇÃO: Se estiver testando localmente, mude para http://localhost:3000
+        const API_URL = 'https://texturasbolt.onrender.com';
+
+        async function init() {
+            const params = new URLSearchParams(window.location.search);
+            const token = params.get('token');
+
+            if (!token) {
+                showError('Token não encontrado na URL.');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/api/redeem-key`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    showError(data.error || 'Erro ao validar token.');
+                    return;
+                }
+
+                showSuccess(data);
+            } catch (err) {
+                showError('Erro de conexão com o servidor.');
+            }
+        }
+
+        function showSuccess(data) {
+            document.getElementById('loading-state').classList.add('hidden');
+            document.getElementById('success-state').classList.remove('hidden');
+            document.getElementById('key-display').innerText = data.key;
+            document.getElementById('user-tag').innerText = data.user;
+        }
+
+        function showError(msg) {
+            document.getElementById('loading-state').classList.add('hidden');
+            document.getElementById('error-state').classList.remove('hidden');
+            document.getElementById('error-msg').innerText = msg;
+        }
+
+        function copyKey() {
+            const key = document.getElementById('key-display').innerText;
+            navigator.clipboard.writeText(key);
+            const btn = document.querySelector('.copy-btn');
+            btn.innerText = 'Copiado!';
+            setTimeout(() => btn.innerText = 'Copiar Key', 2000);
+        }
+        init();
+    </script>
+</body>
+
+</html>
