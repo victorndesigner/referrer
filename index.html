@@ -159,60 +159,39 @@
         async function init() {
             const referrer = document.referrer.toLowerCase();
             const token = params.get('token');
-            const type = params.get('type') || 'key';
-            const hwid = params.get('hwid');
-            const textureId = params.get('id');
+            const type = 'key'; // Força tipo key, pois este site é só para keys agora
 
-            // Ajustar textos iniciais baseado no tipo
-            if (type === 'texture') {
-                title.innerText = 'Liberando Textura...';
-                desc.innerText = 'Aguarde a validação do encurtador para iniciar o download no App.';
-                status.innerText = 'Confirmando acesso aos arquivos...';
-            } else {
-                title.innerText = 'Gerando sua Key...';
-                desc.innerText = 'Validando encurtador para liberar sua chave de acesso.';
-                status.innerText = 'Verificando segurança...';
-            }
+            // Ajustar textos iniciais para key
+            title.innerText = 'Gerando sua Key...';
+            desc.innerText = 'Validando encurtador para liberar sua chave de acesso.';
+            status.innerText = 'Verificando segurança...';
 
-            console.log('--- Bolt Texturas Debug ---');
+            console.log('--- Bolt Texturas Key Generator ---');
             console.log('Referrer:', referrer || 'Direto');
             console.log('Token:', token || 'Nulo');
 
             await new Promise(r => setTimeout(r, 1500));
 
-            // SEGURANÇA: Domínios do encurtador sannerurl.com
+            // SEGURANÇA
             const validDomains = ['sannerurl', 'caminhodesperto', 'bolttexturas', 'encurtador'];
             const referrerValid = validDomains.some(d => referrer.indexOf(d) !== -1);
             const tokenValid = token === 'bolt_2026_acesso';
-            const isAuthorized = referrerValid || tokenValid;
 
-            if (!isAuthorized) {
-                showError('Acesso não autorizado. Você deve passar pelo encurtador oficial para acessar este conteúdo.');
+            if (!referrerValid && !tokenValid) {
+                showError('Acesso não autorizado. Você deve passar pelo encurtador oficial.');
                 return;
             }
 
-            // --- PROTEÇÃO ANTI-F5: Usar LocalStorage para evitar re-uso do mesmo link/referrer ---
-            const requestKey = `bolt_${referrer}_${type}_${token}_${textureId || ''}_${hwid || ''}`;
-            if (localStorage.getItem('bolt_last_request') === requestKey) {
-                if (type === 'key') {
-                    showError('Link já utilizado. Volte ao início para gerar um novo link de acesso.');
-                    return;
-                }
+            // ANTI-F5
+            const requestKey = `bolt_key gen_${referrer}_${token}`;
+            if (localStorage.getItem('bolt_last_key_request') === requestKey) {
+                showError('Link já utilizado. Volte ao início para gerar um novo link.');
+                return;
             }
-
-            // Marcar como usado por 60 segundos
-            localStorage.setItem('bolt_last_request', requestKey);
-
-            // Limpar URL após validar para visual
+            localStorage.setItem('bolt_last_key_request', requestKey);
             window.history.replaceState({}, document.title, window.location.pathname);
 
-            if (type === 'key') {
-                handleKeyGeneration();
-            } else if (type === 'texture') {
-                handleTextureRelease(hwid, textureId);
-            } else {
-                showError('Link inválido ou parâmetros ausentes. Certifique-se de estar usando o link configurado no painel.');
-            }
+            handleKeyGeneration();
         }
 
         async function handleKeyGeneration() {
@@ -233,29 +212,7 @@
                         actionBtn.innerText = '✅ Copiado!';
                     };
                 } else { showError('Servidor recusou a geração.'); }
-            } catch (e) { showError('Erro de conexão com o painel (API_URL incorreta?).'); }
-        }
-
-        async function handleTextureRelease(hwid, textureId) {
-            if (!hwid || !textureId) return showError('Faltam parâmetros para o download.');
-            try {
-                status.innerText = 'Confirmando download no servidor...';
-                const res = await fetch(`${API_URL}/download/confirm?hwid=${hwid}&textureId=${textureId}`);
-                const data = await res.json();
-                if (data.success) {
-                    mainLogo.style.display = 'none';
-                    successIcon.style.display = 'block';
-                    loadingArea.style.display = 'none';
-                    title.innerText = 'Download Pronto!';
-                    desc.innerText = 'O seu download já foi liberado. Volte para o Aplicativo para acompanhar.';
-                    status.style.display = 'none';
-
-                    // Botão de fechar para melhorar UX
-                    actionBtn.style.display = 'block';
-                    actionBtn.innerText = 'Fechar Página';
-                    actionBtn.onclick = () => window.close();
-                }
-            } catch (e) { showError('Erro ao confirmar download no servidor.'); }
+            } catch (e) { showError('Erro de conexão com o painel.'); }
         }
 
         function showError(msg) {
