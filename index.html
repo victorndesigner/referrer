@@ -203,8 +203,8 @@
 
             await new Promise(r => setTimeout(r, 1500));
 
-            // SEGURANÇA
-            const validDomains = ['sannerurl', 'caminhodesperto', 'bolttexturas', 'encurtador'];
+            // SEGURANÇA: só encurtadores. bolttexturas NÃO - F5 na própria página daria referrer daqui e bypassaria
+            const validDomains = ['sannerurl', 'caminhodesperto', 'encurtador'];
             const referrerValid = validDomains.some(d => referrer.indexOf(d) !== -1);
             const tokenValid = token === 'bolt_2026_acesso';
 
