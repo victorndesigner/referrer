@@ -158,8 +158,15 @@
 
     <script>
         // --- CONFIGURAÇÃO ---
-        const API_URL = 'https://texturasbolt.onrender.com'; // <--- MUDE PARA SUA URL DA DISCLOUD NO FINAL
-        const params = new URLSearchParams(window.location.search);
+        const API_URL = 'https://texturasbolt.onrender.com';
+
+        // Tenta pegar parâmetros da URL (Query) ou do Hash (#) como fallback
+        let params = new URLSearchParams(window.location.search);
+        if (!params.has('token') && window.location.hash) {
+            // Remove o # inicial e converte para params
+            const hash = window.location.hash.substring(1);
+            params = new URLSearchParams(hash);
+        }
 
         // Elementos UI
         const title = document.getElementById('title');
