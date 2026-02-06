@@ -168,6 +168,9 @@
             document.getElementById('success-state').classList.remove('hidden');
             document.getElementById('key-display').innerText = data.key;
             document.getElementById('user-tag').innerText = data.user;
+
+            // Limpar URL para evitar F5 acidental
+            window.history.replaceState({}, document.title, window.location.pathname);
         }
 
         function showError(msg) {
