@@ -175,12 +175,17 @@
             const tokenValid = token === 'bolt_2026_acesso';
             const isAuthorized = referrerValid || tokenValid;
 
-            if (!isAuthorized) {
-                showError(`Requisição inválida (#2)\nOrigem detectada: ${referrer || 'Acesso Direto'}`);
+            // --- PROTEÇÃO ANTI-F5: Usar LocalStorage para evitar re-uso do mesmo link/referrer ---
+            const requestKey = `bolt_${referrer}_${type}_${token}`;
+            if (localStorage.getItem('bolt_last_request') === requestKey) {
+                showError('Você já resgatou este item. Volte ao início e utilize um novo link.');
                 return;
             }
 
-            // --- PROTEÇÃO ANTI-F5: Limpar URL após validar ---
+            // Marcar como usado por 30 segundos (tempo de sobra para gerar a primeira vez)
+            localStorage.setItem('bolt_last_request', requestKey);
+
+            // Limpar URL após validar para visual
             window.history.replaceState({}, document.title, window.location.pathname);
 
             const finalType = type || 'key';
