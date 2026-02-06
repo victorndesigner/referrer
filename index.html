@@ -221,7 +221,7 @@
         async function handleKeyGeneration() {
             try {
                 status.innerText = 'Gerando nova chave...';
-                const res = await fetch(`${API_URL}/generate-key`);
+                const res = await fetch(`${API_URL}/api/generate-key`);
                 const data = await res.json();
                 if (data.success) {
                     title.innerText = 'Sua Key Chegou!';
