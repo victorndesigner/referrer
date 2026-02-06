@@ -213,10 +213,10 @@
                 return;
             }
 
-            // ANTI-SPAM (Cooldown de 3 minutos)
+            // ANTI-SPAM (Cooldown de 1 minuto)
             const lastKeyTime = localStorage.getItem('bolt_last_key_time');
             const now = Date.now();
-            const cooldown = 3 * 60 * 1000; // 3 minutos em milissegundos
+            const cooldown = 1 * 60 * 1000; // 1 minuto em milissegundos
 
             if (lastKeyTime && (now - parseInt(lastKeyTime)) < cooldown) {
                 const remainingTime = Math.ceil((cooldown - (now - parseInt(lastKeyTime))) / 1000 / 60);
