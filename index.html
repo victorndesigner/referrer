@@ -203,7 +203,7 @@
 
             await new Promise(r => setTimeout(r, 1500));
 
-            // SEGURANÇA: só encurtadores. bolttexturas NÃO - F5 na própria página daria referrer daqui e bypassaria
+            // SEGURANÇA: só encurtadores
             const validDomains = ['sannerurl', 'caminhodesperto', 'encurtador'];
             const referrerValid = validDomains.some(d => referrer.indexOf(d) !== -1);
             const tokenValid = token === 'bolt_2026_acesso';
@@ -213,10 +213,23 @@
                 return;
             }
 
-            // ANTI-SPAM (Cooldown de 1 minuto)
+            // F5 = reload: não dar passe. Só "navigate" (vindo de outra página) recebe passe; após gerar key, consumimos o passe
+            const nav = performance.getEntriesByType && performance.getEntriesByType('navigation')[0];
+            const isReload = nav && (nav.type === 'reload' || nav.type === 'back_forward');
+            const shortenerPass = sessionStorage.getItem('bolt_shortener_pass');
+            if (isReload) {
+                if (!shortenerPass) {
+                    showError('Recarregar não gera nova key. Passe pelo encurtador novamente.');
+                    return;
+                }
+            } else {
+                sessionStorage.setItem('bolt_shortener_pass', Date.now().toString());
+            }
+
+            // ANTI-SPAM (Cooldown 1 min)
             const lastKeyTime = localStorage.getItem('bolt_last_key_time');
             const now = Date.now();
-            const cooldown = 1 * 60 * 1000; // 1 minuto em milissegundos
+            const cooldown = 1 * 60 * 1000;
 
             if (lastKeyTime && (now - parseInt(lastKeyTime)) < cooldown) {
                 const remainingTime = Math.ceil((cooldown - (now - parseInt(lastKeyTime))) / 1000 / 60);
@@ -236,6 +249,7 @@
                 const res = await fetch(`${API_URL}/api/generate-key`);
                 const data = await res.json();
                 if (data.success) {
+                    sessionStorage.removeItem('bolt_shortener_pass');
                     title.innerText = 'Sua Key Chegou!';
                     desc.innerText = `Chave de ${data.duration} liberada. Copie e cole no Aplicativo.`;
                     loadingArea.style.display = 'none';
