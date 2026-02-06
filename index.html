@@ -213,13 +213,18 @@
                 return;
             }
 
-            // ANTI-F5
-            const requestKey = `bolt_key gen_${referrer}_${token}`;
-            if (localStorage.getItem('bolt_last_key_request') === requestKey) {
-                showError('Link já utilizado. Volte ao início para gerar um novo link.');
+            // ANTI-SPAM (Cooldown de 3 minutos)
+            const lastKeyTime = localStorage.getItem('bolt_last_key_time');
+            const now = Date.now();
+            const cooldown = 3 * 60 * 1000; // 3 minutos em milissegundos
+
+            if (lastKeyTime && (now - parseInt(lastKeyTime)) < cooldown) {
+                const remainingTime = Math.ceil((cooldown - (now - parseInt(lastKeyTime))) / 1000 / 60);
+                showError(`Aguarde ${remainingTime} minuto(s) para gerar outra key.`);
                 return;
             }
-            localStorage.setItem('bolt_last_key_request', requestKey);
+
+            localStorage.setItem('bolt_last_key_time', now.toString());
             window.history.replaceState({}, document.title, window.location.pathname);
 
             handleKeyGeneration();
