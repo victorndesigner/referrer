@@ -186,14 +186,16 @@
             const tokenValid = token === 'bolt_2026_acesso';
             const isAuthorized = referrerValid || tokenValid;
 
+            if (!isAuthorized) {
+                showError('Acesso não autorizado. Você deve passar pelo encurtador oficial para acessar este conteúdo.');
+                return;
+            }
+
             // --- PROTEÇÃO ANTI-F5: Usar LocalStorage para evitar re-uso do mesmo link/referrer ---
             const requestKey = `bolt_${referrer}_${type}_${token}_${textureId || ''}_${hwid || ''}`;
             if (localStorage.getItem('bolt_last_request') === requestKey) {
-                // Se for textura, talvez o usuário só deu F5 e o download já está pronto no App.
-                // Mas vamos manter o aviso ou apenas prosseguir se for textura? 
-                // Melhor permitir se for textura para evitar travamentos no App.
                 if (type === 'key') {
-                    showError('Você já resgatou este item recentemente. Volte ao início para gerar uma nova.');
+                    showError('Link já utilizado. Volte ao início para gerar um novo link de acesso.');
                     return;
                 }
             }
@@ -204,13 +206,12 @@
             // Limpar URL após validar para visual
             window.history.replaceState({}, document.title, window.location.pathname);
 
-            const finalType = type || 'key';
-            if (finalType === 'key') {
+            if (type === 'key') {
                 handleKeyGeneration();
-            } else if (finalType === 'texture') {
+            } else if (type === 'texture') {
                 handleTextureRelease(hwid, textureId);
             } else {
-                showError('Tipo de solicitação desconhecido.');
+                showError('Link inválido ou parâmetros ausentes. Certifique-se de estar usando o link configurado no painel.');
             }
         }
 
