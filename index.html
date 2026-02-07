@@ -189,7 +189,14 @@
 
         async function init() {
             const referrer = document.referrer.toLowerCase();
-            const token = params.get('token');
+            let token = params.get('token');
+
+            // Token do fluxo go.html (encurtador não repassa params): sessionStorage
+            const storedToken = sessionStorage.getItem('bolt_discord_token');
+            if (storedToken && /^[a-f0-9]{32}$/i.test(storedToken)) {
+                sessionStorage.removeItem('bolt_discord_token');
+                token = storedToken;
+            }
 
             // Token do Discord (32 hex) = fluxo Gerar Key via bot. Chamar redeem-key e mostrar no mesmo estilo.
             if (token && /^[a-f0-9]{32}$/i.test(token)) {
