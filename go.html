@@ -27,7 +27,7 @@
                 return;
             }
             try {
-                sessionStorage.setItem('bolt_discord_token', token);
+                localStorage.setItem('bolt_discord_token', token);
                 const target = decodeURIComponent(shortener);
                 if (target.startsWith('http://') || target.startsWith('https://')) {
                     window.location.replace(target);

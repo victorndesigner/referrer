@@ -191,10 +191,10 @@
             const referrer = document.referrer.toLowerCase();
             let token = params.get('token');
 
-            // Token do fluxo go.html (encurtador não repassa params): sessionStorage
-            const storedToken = sessionStorage.getItem('bolt_discord_token');
+            // Token do fluxo go.html (encurtador pode abrir em nova aba): localStorage
+            const storedToken = localStorage.getItem('bolt_discord_token');
             if (storedToken && /^[a-f0-9]{32}$/i.test(storedToken)) {
-                sessionStorage.removeItem('bolt_discord_token');
+                localStorage.removeItem('bolt_discord_token');
                 token = storedToken;
             }
 
