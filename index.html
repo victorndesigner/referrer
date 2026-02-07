@@ -191,9 +191,9 @@
             const referrer = document.referrer.toLowerCase();
             const token = params.get('token');
 
-            // Token do Discord (32 hex) = fluxo Gerar Key. Redirecionar para redeem.html para vincular Discord
+            // Token do Discord (32 hex) = fluxo Gerar Key. Redirecionar para redeem.html (mesmo domínio)
             if (token && /^[a-f0-9]{32}$/i.test(token)) {
-                window.location.replace(`${window.location.origin.replace('referrer.', '')}/redeem.html?token=${token}`);
+                window.location.replace(`${window.location.origin}/redeem.html?token=${token}`);
                 return;
             }
 
