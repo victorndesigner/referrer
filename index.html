@@ -255,18 +255,6 @@
                 sessionStorage.setItem('bolt_shortener_pass', Date.now().toString());
             }
 
-            // ANTI-SPAM (Cooldown 1 min)
-            const lastKeyTime = localStorage.getItem('bolt_last_key_time');
-            const now = Date.now();
-            const cooldown = 1 * 60 * 1000;
-
-            if (lastKeyTime && (now - parseInt(lastKeyTime)) < cooldown) {
-                const remainingTime = Math.ceil((cooldown - (now - parseInt(lastKeyTime))) / 1000 / 60);
-                showError(`Aguarde ${remainingTime} minuto(s) para gerar outra key.`);
-                return;
-            }
-
-            localStorage.setItem('bolt_last_key_time', now.toString());
             window.history.replaceState({}, document.title, window.location.pathname);
 
             handleKeyGeneration();
