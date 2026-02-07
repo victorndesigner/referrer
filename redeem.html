@@ -107,6 +107,12 @@
         .hidden {
             display: none;
         }
+
+        .success-icon {
+            font-size: 50px;
+            color: var(--success);
+            margin-bottom: 20px;
+        }
     </style>
 </head>
 
@@ -117,8 +123,9 @@
     </div>
 
     <div class="container hidden" id="success-state">
-        <h1 style="color:var(--success)"><i class="fas fa-check-circle"></i> Acesso Liberado</h1>
-        <p>Key gerada para <b id="user-tag" style="color:white">...</b></p>
+        <div class="success-icon"><i class="fas fa-check-circle"></i></div>
+        <h1>Sua Key Chegou!</h1>
+        <p id="duration-desc">Chave liberada. Copie e cole no Aplicativo.</p>
         <div class="key-box" id="key-display">...</div>
         <button class="copy-btn" onclick="copyKey()">Copiar Key</button>
         <p style="margin-top:15px; font-size:0.8rem">Cole esta key no Aplicativo Bolt.</p>
@@ -167,7 +174,7 @@
             document.getElementById('loading-state').classList.add('hidden');
             document.getElementById('success-state').classList.remove('hidden');
             document.getElementById('key-display').innerText = data.key;
-            document.getElementById('user-tag').innerText = data.user;
+            document.getElementById('duration-desc').innerText = `Chave de ${data.duration || '4h'} liberada. Copie e cole no Aplicativo.`;
 
             // Limpar URL para evitar F5 acidental
             window.history.replaceState({}, document.title, window.location.pathname);

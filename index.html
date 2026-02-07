@@ -191,13 +191,13 @@
             const referrer = document.referrer.toLowerCase();
             const token = params.get('token');
 
-            // Token do Discord (32 hex) = fluxo Gerar Key. Redirecionar para redeem.html (mesmo domínio)
+            // Token do Discord (32 hex) = fluxo Gerar Key via bot. Chamar redeem-key e mostrar no mesmo estilo.
             if (token && /^[a-f0-9]{32}$/i.test(token)) {
-                window.location.replace(`${window.location.origin}/redeem.html?token=${token}`);
+                handleRedeemKey(token);
                 return;
             }
 
-            // Ajustar textos iniciais para key
+            // Ajustar textos iniciais para key (fluxo encurtador -> generate-key)
             title.innerText = 'Gerando sua Key...';
             desc.innerText = 'Validando encurtador para liberar sua chave de acesso.';
             status.innerText = 'Verificando segurança...';
@@ -248,6 +248,39 @@
             handleKeyGeneration();
         }
 
+        async function handleRedeemKey(token) {
+            title.innerText = 'Gerando sua Key...';
+            desc.innerText = 'Validando acesso vinculado ao Discord.';
+            status.innerText = 'Verificando token...';
+            await new Promise(r => setTimeout(r, 800));
+            try {
+                status.innerText = 'Gerando chave...';
+                const res = await fetch(`${API_URL}/api/redeem-key`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    sessionStorage.removeItem('bolt_shortener_pass');
+                    mainLogo.style.display = 'none';
+                    successIcon.style.display = 'block';
+                    title.innerText = 'Sua Key Chegou!';
+                    desc.innerText = `Chave de ${data.duration} liberada. Copie e cole no Aplicativo.`;
+                    loadingArea.style.display = 'none';
+                    resultBox.style.display = 'block';
+                    resultText.innerText = data.key;
+                    actionBtn.style.display = 'block';
+                    actionBtn.innerText = 'Copiar Key';
+                    actionBtn.onclick = () => {
+                        navigator.clipboard.writeText(data.key);
+                        actionBtn.innerText = '✅ Copiado!';
+                    };
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                } else { showError(data.error || 'Token expirado. Gere novamente no Discord.'); }
+            } catch (e) { showError('Erro de conexão com o painel.'); }
+        }
+
         async function handleKeyGeneration() {
             try {
                 status.innerText = 'Gerando nova chave...';
@@ -255,6 +288,8 @@
                 const data = await res.json();
                 if (data.success) {
                     sessionStorage.removeItem('bolt_shortener_pass');
+                    mainLogo.style.display = 'none';
+                    successIcon.style.display = 'block';
                     title.innerText = 'Sua Key Chegou!';
                     desc.innerText = `Chave de ${data.duration} liberada. Copie e cole no Aplicativo.`;
                     loadingArea.style.display = 'none';
